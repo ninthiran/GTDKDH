@@ -1,6 +1,8 @@
 body {
   color: #444444;
+  background: #eeeeee;
 }
+
 #Body {
   min-height: 550px;
 }
@@ -9,19 +11,28 @@ body {
   background: #2a2c43 !important;
   color: #ffffff !important;
 }
+
 .left {
   float: left !important;
 }
+
+.error {
+  color: red;
+}
+
 input {
   color: #333333;
   border-radius: 5px !important;
 }
+
 button {
   border-radius: 5px !important;
 }
+
 .off-canvas {
   z-index: 1 !important;
 }
+
 h1,
 h2,
 h3,

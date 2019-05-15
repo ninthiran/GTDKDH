@@ -8,6 +8,11 @@ class Header extends Component {
       <div className="callout primary" id="Header">
         <div className="row column">
           <img src={logo} alt="logo" />
+          {sessionStorage.getItem("userData") ? (
+            <span className="sessionName">
+              {sessionStorage.getItem("UserName")}
+            </span>
+          ) : null}
         </div>
       </div>
     );

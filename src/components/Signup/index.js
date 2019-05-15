@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { PostData } from "../../services/PostData";
+import { PostData } from "../../services/ClientDataServices";
 import { Redirect } from "react-router-dom";
 import "./Signup.css";
 

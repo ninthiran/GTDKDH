@@ -5,6 +5,7 @@ import Welcome from "./components/Welcome";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import UserFeed from "./components/UserFeed";
 import NotFound from "./components/NotFound";
 
 const Routes = () => (
@@ -14,6 +15,7 @@ const Routes = () => (
       <Route path="/home" component={Home} />
       <Route path="/login" component={Login} />
       <Route path="/Signup" component={Signup} />
+      <Route path="/UserFeed" component={UserFeed} />
       <Route path="*" component={NotFound} />
     </Switch>
   </BrowserRouter>

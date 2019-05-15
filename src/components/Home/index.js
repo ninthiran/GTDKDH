@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Redirect } from "react-router-dom";
 import "./Home.css";
-import { PostData } from "../../services/PostData";
+import { PostData } from "../../services/ClientDataServices";
 import UserFeed from "../UserFeed";
 import ReactConfirmAlert, { confirmAlert } from "react-confirm-alert";
 import "../../styles/react-confirm-alert.css";

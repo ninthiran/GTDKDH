@@ -11,12 +11,12 @@
 .button:hover,
 .button:active,
 .button:focus {
-  background: #faa74b;
-  color: black;
+  background: #d65a31;
+  color: #393e46;
 }
 
 .button {
-  background: black;
+  background: #393e46;
   color: white;
 }
 
@@ -43,7 +43,7 @@ Login Box
 .box-login-tab {
   width: 50%;
   height: 40px;
-  background: #dadada;
+  background: #fff;
   position: relative;
   float: left;
   z-index: 1;
@@ -75,7 +75,7 @@ Login Box
 .box-login {
   position: relative;
   top: -4px;
-  width: 100%;
+  width: 80%;
   background: #fdfdfd;
   text-align: center;
   overflow: hidden;
@@ -236,6 +236,7 @@ input[type="password"] {
   font-size: 16px;
   font-weight: 400;
   float: left;
+  margin: 0;
 
   -webkit-box-shadow: inset 1px 1px 0px rgba(0, 0, 0, 0.05),
     1px 1px 0px rgba(255, 255, 255, 1);
@@ -247,7 +248,7 @@ input[type="password"] {
 
 input[type="text"]:focus,
 input[type="password"]:focus {
-  background-color: #f8f8c6;
+  background-color: #fff;
   outline: none;
 }
 
@@ -262,16 +263,16 @@ input[type="submit"] {
   color: #000;
   line-height: 40px;
   text-align: center;
-  background-color: #faa74b;
+  background-color: #d65a31;
   border: 1px #000 solid;
   opacity: 1;
   cursor: pointer;
 }
 
 input[type="submit"]:hover {
-  background-color: #000;
-  border: 1px #faa74b solid;
-  color: #faa74b;
+  background-color: #393e46;
+  border: 1px #d65a31 solid;
+  color: #fff;
 }
 
 input[type="submit"]:focus {
@@ -330,4 +331,9 @@ Credits
 .icon-credits a {
   text-decoration: none;
   color: rgba(255, 255, 255, 0.2);
+}
+
+.center-box {
+  width: 80%;
+  margin: 0 auto;
 }

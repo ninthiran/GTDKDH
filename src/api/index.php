@@ -1,405 +1,141 @@
 <?php
-require 'config.php';
-require 'Slim/Slim.php';
+require_once "config.php";
+ 
+// Define variables and initialize with empty values
+$username = $password = $confirm_password = $userid = "";
+$username_err = $password_err = $confirm_password_err = $userid_err = "";
 
-\Slim\Slim::registerAutoloader();
-$app = new \Slim\Slim();
+$datetime = date ("Y-m-d H:i:s"); 
 
-$app->post('/login','login'); /* User login */
-$app->post('/signup','signup'); /* User Signup  */
-$app->get('/getFeed','getFeed'); /* User Feeds  */
-$app->post('/feed','feed'); /* User Feeds  */
-$app->post('/feedUpdate','feedUpdate'); /* User Feeds  */
-$app->post('/feedDelete','feedDelete'); /* User Feeds  */
-$app->post('/getImages', 'getImages');
-
-
-$app->run();
-
-/************************* USER LOGIN *************************************/
-/* ### User login ### */
-function login() {
-    
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    
-    try {
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST"){
+ //print_r($_POST);die;
+    // Validate username
+    if(empty(trim($_POST["username"]))){
+        $username_err = "Please enter a username.";
+    } else{
+        // Prepare a select statement
+        $sql = "SELECT UserID FROM users WHERE UserID = ?";
         
-        $db = getDB();
-        $userData ='';
-        $sql = "SELECT user_id, name, email, username FROM users WHERE (username=:username or email=:username) and password=:password ";
-        $stmt = $db->prepare($sql);
-        $stmt->bindParam("username", $data->username, PDO::PARAM_STR);
-        $password=hash('sha256',$data->password);
-        $stmt->bindParam("password", $password, PDO::PARAM_STR);
-        $stmt->execute();
-        $mainCount=$stmt->rowCount();
-        $userData = $stmt->fetch(PDO::FETCH_OBJ);
-        
-        if(!empty($userData))
-        {
-            $user_id=$userData->user_id;
-            $userData->token = apiToken($user_id);
-        }
-        
-        $db = null;
-         if($userData){
-               $userData = json_encode($userData);
-                echo '{"userData": ' .$userData . '}';
-            } else {
-               echo '{"error":{"text":"Bad request wrong username and password"}}';
-            }
-
-           
-    }
-    catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
-
-
-/* ### User registration ### */
-function signup() {
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $email=$data->email;
-    $name=$data->name;
-    $username=$data->username;
-    $password=$data->password;
-    
-    try {
-        
-        $username_check = preg_match('~^[A-Za-z0-9_]{3,20}$~i', $username);
-        $email_check = preg_match('~^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.([a-zA-Z]{2,4})$~i', $email);
-        $password_check = preg_match('~^[A-Za-z0-9!@#$%^&*()_]{6,20}$~i', $password);
-        
-        echo $email_check.'<br/>'.$email;
-        
-        if (strlen(trim($username))>0 && strlen(trim($password))>0 && strlen(trim($email))>0 && $email_check>0 && $username_check>0 && $password_check>0)
-        {
-            echo 'here';
-            $db = getDB();
-            $userData = '';
-            $sql = "SELECT user_id FROM users WHERE username=:username or email=:email";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam("username", $username,PDO::PARAM_STR);
-            $stmt->bindParam("email", $email,PDO::PARAM_STR);
-            $stmt->execute();
-            $mainCount=$stmt->rowCount();
-            $created=time();
-            if($mainCount==0)
-            {
-                
-                /*Inserting user values*/
-                $sql1="INSERT INTO users(username,password,email,name)VALUES(:username,:password,:email,:name)";
-                $stmt1 = $db->prepare($sql1);
-                $stmt1->bindParam("username", $username,PDO::PARAM_STR);
-                $password=hash('sha256',$data->password);
-                $stmt1->bindParam("password", $password,PDO::PARAM_STR);
-                $stmt1->bindParam("email", $email,PDO::PARAM_STR);
-                $stmt1->bindParam("name", $name,PDO::PARAM_STR);
-                $stmt1->execute();
-                
-                $userData=internalUserDetails($email);
-                
-            }
+        if($stmt = $mysqli->prepare($sql)){
+            // Bind variables to the prepared statement as parameters
+            $stmt->bind_param("s", $param_username);
             
-            $db = null;
+            // Set parameters
+            $param_username = trim($_POST["username"]);
+            
+            // Attempt to execute the prepared statement
+            if($stmt->execute()){
+                // store result
+                $stmt->store_result();
+                if($stmt->num_rows == 1){
+                    $username_err = "This username is already taken.";
+                } else{
+                    $username = trim($_POST["username"]);
+                }
+            } else{
+                echo "Oops! Something went wrong. Please try again later.";
+            }
+        }
          
-
-            if($userData){
-               $userData = json_encode($userData);
-                echo '{"userData": ' .$userData . '}';
-            } else {
-               echo '{"error":{"text":"Enter valid data"}}';
-            }
-
-           
-        }
-        else{
-            echo '{"error":{"text":"Enter valid data"}}';
-        }
+        // Close statement
+        $stmt->close();
     }
-    catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    
+    // Validate password
+    if(empty(trim($_POST["password"]))){
+        $password_err = "Please enter a password.";     
+    } elseif(strlen(trim($_POST["password"])) < 6){
+        $password_err = "Password must have atleast 6 characters.";
+    } else{
+        $password = trim($_POST["password"]);
     }
-}
-
-function email() {
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $email=$data->email;
-
-    try {
-       
-        $email_check = preg_match('~^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.([a-zA-Z]{2,4})$~i', $email);
-       
-        if (strlen(trim($email))>0 && $email_check>0)
-        {
-            $db = getDB();
-            $userData = '';
-            $sql = "SELECT user_id FROM emailUsers WHERE email=:email";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam("email", $email,PDO::PARAM_STR);
-            $stmt->execute();
-            $mainCount=$stmt->rowCount();
-            $created=time();
-            if($mainCount==0)
-            {
-                
-                /*Inserting user values*/
-                $sql1="INSERT INTO emailUsers(email)VALUES(:email)";
-                $stmt1 = $db->prepare($sql1);
-                $stmt1->bindParam("email", $email,PDO::PARAM_STR);
-                $stmt1->execute();
-                
-                
-            }
-            $userData=internalEmailDetails($email);
-            $db = null;
-            if($userData){
-               $userData = json_encode($userData);
-                echo '{"userData": ' .$userData . '}';
-            } else {
-               echo '{"error":{"text":"Enter valid dataaaa"}}';
-            }
-        }
-        else{
-            echo '{"error":{"text":"Enter valid data"}}';
+    
+    // Validate confirm password
+    if(empty(trim($_POST["confirm_password"]))){
+        $confirm_password_err = "Please confirm password.";     
+    } else{
+        $confirm_password = trim($_POST["confirm_password"]);
+        if(empty($password_err) && ($password != $confirm_password)){
+            $confirm_password_err = "Password did not match.";
         }
     }
     
-    catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
-
-
-/* ### internal Username Details ### */
-function internalUserDetails($input) {
-    
-    try {
-        $db = getDB();
-        $sql = "SELECT user_id, name, email, username FROM users WHERE username=:input or email=:input";
-        $stmt = $db->prepare($sql);
-        $stmt->bindParam("input", $input,PDO::PARAM_STR);
-        $stmt->execute();
-        $usernameDetails = $stmt->fetch(PDO::FETCH_OBJ);
-        $usernameDetails->token = apiToken($usernameDetails->user_id);
-        $db = null;
-        return $usernameDetails;
+    // Check input errors before inserting in database
+    if(empty($username_err) && empty($password_err) && empty($confirm_password_err)){
         
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-    
-}
-
-function getFeed(){
-  
-   
-    try {
+        // Prepare an insert statement
+        $sql = "INSERT INTO `users` (`UserID`, `UserName`, `Password`, `CreatedByUserID`, `CreatedDateTime`) VALUES (?, ?,?, ?,?)";
          
-        if(1){
-            $feedData = '';
-            $db = getDB();
-          
-                $sql = "SELECT * FROM feed  ORDER BY feed_id DESC LIMIT 15";
-                $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-                $stmt->bindParam("lastCreated", $lastCreated, PDO::PARAM_STR);
-          
-            $stmt->execute();
-            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
-           
-            $db = null;
-
-            if($feedData)
-            echo '{"feedData": ' . json_encode($feedData) . '}';
-            else
-            echo '{"feedData": ""}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
-        }
-       
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-
-}
-
-function feed(){
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $user_id=$data->user_id;
-    $token=$data->token;
-    $lastCreated = $data->lastCreated;
-    $systemToken=apiToken($user_id);
-   
-    try {
-         
-        if($systemToken == $token){
-            $feedData = '';
-            $db = getDB();
-            if($lastCreated){
-                $sql = "SELECT * FROM feed WHERE user_id_fk=:user_id AND created < :lastCreated ORDER BY feed_id DESC LIMIT 5";
-                $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-                $stmt->bindParam("lastCreated", $lastCreated, PDO::PARAM_STR);
+        if($stmt = $mysqli->prepare($sql)){
+            // Bind variables to the prepared statement as parameters
+            $stmt->bind_param("sssss", $param_userid, $param_username, $param_password, $param_userid, $datetime);
+            
+            // Set parameters
+            $param_username = $username;
+            $param_password = password_hash($password, PASSWORD_DEFAULT); // Creates a password hash
+            $param_userid = trim($_POST["userid"]);
+           // echo $param_userid ;die;
+            // Attempt to execute the prepared statement
+            if($stmt->execute()){
+                // Redirect to login page
+                header("location: login.php");
+            } else{
+                echo "Something went wrong. Please try again later.";
             }
-            else{
-                $sql = "SELECT * FROM feed WHERE user_id_fk=:user_id ORDER BY feed_id DESC LIMIT 5";
-                $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            }
-            $stmt->execute();
-            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
-           
-            $db = null;
-
-            if($feedData)
-            echo '{"feedData": ' . json_encode($feedData) . '}';
-            else
-            echo '{"feedData": ""}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
         }
-       
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-
-}
-
-function feedUpdate(){
-
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $user_id=$data->user_id;
-    $token=$data->token;
-    $feed=$data->feed;
-    
-    $systemToken=apiToken($user_id);
-   
-    try {
          
-        if($systemToken == $token){
-         
-            
-            $feedData = '';
-            $db = getDB();
-            $sql = "INSERT INTO feed ( feed, created, user_id_fk) VALUES (:feed,:created,:user_id)";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam("feed", $feed, PDO::PARAM_STR);
-            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            $created = time();
-            $stmt->bindParam("created", $created, PDO::PARAM_INT);
-            $stmt->execute();
-            
-
-
-            $sql1 = "SELECT * FROM feed WHERE user_id_fk=:user_id ORDER BY feed_id DESC LIMIT 1";
-            $stmt1 = $db->prepare($sql1);
-            $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            $stmt1->execute();
-            $feedData = $stmt1->fetch(PDO::FETCH_OBJ);
-
-
-            $db = null;
-            echo '{"feedData": ' . json_encode($feedData) . '}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
-        }
-       
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
+        // Close statement
+        $stmt->close();
     }
-
-}
-
-
-
-function feedDelete(){
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $user_id=$data->user_id;
-    $token=$data->token;
-    $feed_id=$data->feed_id;
     
-    $systemToken=apiToken($user_id);
-   
-    try {
-         
-        if($systemToken == $token){
-            $feedData = '';
-            $db = getDB();
-            $sql = "Delete FROM feed WHERE user_id_fk=:user_id AND feed_id=:feed_id";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            $stmt->bindParam("feed_id", $feed_id, PDO::PARAM_INT);
-            $stmt->execute();
-            
-           
-            $db = null;
-            echo '{"success":{"text":"Feed deleted"}}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
-        }
-       
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }   
-    
-}
-$app->post('/userImage','userImage'); /* User Details */
-function userImage(){
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $user_id=$data->user_id;
-    $token=$data->token;
-    $imageB64=$data->imageB64;
-    $systemToken=apiToken($user_id);
-    try {
-        if(1){
-            $db = getDB();
-            $sql = "INSERT INTO imagesData(b64,user_id_fk) VALUES(:b64,:user_id)";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            $stmt->bindParam("b64", $imageB64, PDO::PARAM_STR);
-            $stmt->execute();
-            $db = null;
-            echo '{"success":{"status":"uploaded"}}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
-        }
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
-
-$app->post('/getImages', 'getImages');
-function getImages(){
-    $request = \Slim\Slim::getInstance()->request();
-    $data = json_decode($request->getBody());
-    $user_id=$data->user_id;
-    $token=$data->token;
-    
-    $systemToken=apiToken($user_id);
-    try {
-        if(1){
-            $db = getDB();
-            $sql = "SELECT b64 FROM imagesData";
-            $stmt = $db->prepare($sql);
-           
-            $stmt->execute();
-            $imageData = $stmt->fetchAll(PDO::FETCH_OBJ);
-            $db = null;
-            echo '{"imageData": ' . json_encode($imageData) . '}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
-        }
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
+    // Close connection
+    $mysqli->close();
 }
 ?>
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css">
+    <style type="text/css">
+        body{ font: 14px sans-serif; }
+        .wrapper{ width: 350px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h2>Register New User</h2>
+        <p>Please fill this form to create an account.</p>
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+            <div class="form-group <?php echo (!empty($userid_err)) ? 'has-error' : ''; ?>">
+                <label>UserId</label>
+                <input type="text" name="userid" class="form-control" value="<?php echo $userid; ?>">
+                <span class="help-block"><?php echo $userid_err; ?></span>
+            </div> 
+            <div class="form-group <?php echo (!empty($username_err)) ? 'has-error' : ''; ?>">
+                <label>Username</label>
+                <input type="text" name="username" class="form-control" value="<?php echo $username; ?>">
+                <span class="help-block"><?php echo $username_err; ?></span>
+            </div>    
+            <div class="form-group <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control" value="<?php echo $password; ?>">
+                <span class="help-block"><?php echo $password_err; ?></span>
+            </div>
+            <div class="form-group <?php echo (!empty($confirm_password_err)) ? 'has-error' : ''; ?>">
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password" class="form-control" value="<?php echo $confirm_password; ?>">
+                <span class="help-block"><?php echo $confirm_password_err; ?></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" class="btn btn-primary" value="Submit">
+                <input type="reset" class="btn btn-default" value="Reset">
+            </div>
+            <p>Already have an account? <a href="login.php">Login here</a>.</p>
+        </form>
+    </div>    
+</body>
+</html>

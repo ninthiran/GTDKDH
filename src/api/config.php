@@ -1,37 +1,18 @@
-<?php
-//ob_start("ob_gzhandler");
-error_reporting(0);
-session_start();
 
-/* DATABASE CONFIGURATION */
+<?php
+
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
-define('DB_DATABASE', 'banan');
-define("BASE_URL", "http://localhost/PHP-Slim-Restful/api/");
-define("SITE_KEY", 'yourSecretKey');
+define('DB_NAME', 'german_donar_inventory');
+
+// $link = mysqli_connect($host, $user, $password,$dbname);
+$mysqli = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
 
-function getDB() 
-{
-	$dbhost=DB_SERVER;
-	$dbuser=DB_USERNAME;
-	$dbpass=DB_PASSWORD;
-	$dbname=DB_DATABASE;
-	$dbConnection = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass);	
-	$dbConnection->exec("set names utf8");
-	$dbConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	return $dbConnection;
+if (!$mysqli) {
+  die("Connection failed: " . mysqli_connect_error());
 }
-/* DATABASE CONFIGURATION END */
-
-/* API key encryption */
-function apiToken($session_uid)
-{
-$key=md5(SITE_KEY.$session_uid);
-return hash('sha256', $key);
-}
-
 
 
 ?>

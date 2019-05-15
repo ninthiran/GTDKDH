@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Redirect } from "react-router-dom";
-import { PostData } from "../../services/PostData";
+import api, { PostData } from "../../services/ClientDataServices";
 import "./Login.css";
 
 class Login extends Component {
@@ -8,21 +8,38 @@ class Login extends Component {
     super();
 
     this.state = {
-      username: "",
+      userid: "",
       password: "",
-      redirectToReferrer: false
+      UserID: "",
+      redirectToReferrer: false,
+      errorUserIDMessage: "",
+      errorPaswordMessage: ""
     };
   }
 
   login = () => {
-    if (this.state.username && this.state.password) {
+    const userid = this.state.userid;
+    this.state.userid == ""
+      ? this.setState({ uerror: true })
+      : this.setState({ uerror: false });
+
+    const password = this.state.password;
+    this.state.password == ""
+      ? this.setState({ perror: true })
+      : this.setState({ perror: false });
+    console.log(userid);
+    if (userid && password) {
       PostData("login", this.state).then(result => {
-        let responseJson = result;
-        if (responseJson.userData) {
-          sessionStorage.setItem("userData", JSON.stringify(responseJson));
+        console.log(result.data);
+        let responseJson = result.data;
+
+        if (responseJson.UserID) {
+          sessionStorage.setItem("userData", responseJson.UserID);
+          sessionStorage.setItem("UserName", responseJson.UserName);
           this.setState({ redirectToReferrer: true });
         }
       });
+    } else {
     }
   };
 
@@ -31,61 +48,69 @@ class Login extends Component {
   };
 
   render() {
-    if (this.state.redirectToReferrer) {
-      return <Redirect to={"/home"} />;
-    }
+    // if (this.state.redirectToReferrer) {
+    //   return <Redirect to={"/home"} />;
+    // }
 
     if (sessionStorage.getItem("userData")) {
-      return <Redirect to={"/home"} />;
+      return <Redirect to={"/UserFeed"} />;
     }
 
     return (
       <div className="row" id="Body">
         <div className="medium-5 login">
-          <div class="box-form">
-            <div class="box-login-tab" />
-            <div class="box-login-title">
-              <div class="i i-login" />
-              <h4 style={{ textAlign: "center" }}>LOGIN</h4>
-            </div>
-            <div class="box-login">
-              <div class="fieldset-body" id="login_form">
-                <p class="field">
-                  <label for="user">Username</label>
-                  <input
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                    onChange={this.onChange}
-                  />
-                  <span id="valida" class="i i-warning" />
-                </p>
-                <p class="field">
-                  <label for="pass">Password</label>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    onChange={this.onChange}
-                  />
-                  <span id="valida" class="i i-close" />
-                </p>
+          <div className="box-form">
+            <div className="center-box">
+              <div className="box-login-tab" />
+              <div className="box-login-title">
+                <div className="i i-login" />
+                <h4 style={{ textAlign: "center" }}>LOGIN</h4>
+              </div>
+              <div className="box-login">
+                <div className="fieldset-body" id="login_form">
+                  <p className="field">
+                    <label>User ID</label>
+                    <input
+                      type="text"
+                      name="userid"
+                      placeholder="GDK***"
+                      onChange={this.onChange}
+                    />
+                    {this.state.uerror ? (
+                      <span className="error">
+                        Enter valid User ID example: GDK001
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="field">
+                    <label>Password</label>
+                    <input
+                      type="password"
+                      name="password"
+                      placeholder="******"
+                      onChange={this.onChange}
+                    />
+                    {this.state.perror ? (
+                      <span className="error">Enter valid Password</span>
+                    ) : null}
+                  </p>
 
-                <label class="checkbox">
-                  <input
-                    type="checkbox"
-                    value="TRUE"
-                    title="Keep me Signed in"
-                  />{" "}
-                  Keep me Signed in
-                </label>
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      value="TRUE"
+                      title="Keep me Signed in"
+                    />
+                    Keep me Signed in
+                  </label>
 
-                <input
-                  type="submit"
-                  className="button"
-                  value="Login"
-                  onClick={this.login}
-                />
+                  <input
+                    type="submit"
+                    className="button"
+                    value="Login"
+                    onClick={this.login}
+                  />
+                </div>
               </div>
             </div>
           </div>
