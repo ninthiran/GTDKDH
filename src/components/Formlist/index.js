@@ -1,81 +1,71 @@
 import React, { Component } from "react";
-import "./formlist.css";
+import "./formlist.scss";
 
 class FromList extends Component {
   constructor(props) {
-    super();
-    this.state = {
-      itemList: [],
-      count: 0,
-      instock: 0,
-      delivery: 0,
-      endstock: 0
-    };
+    super(props);
+    this.state = {};
   }
 
-  handleChangeStock = () => {
-    this.setState({ instock: this.state.instock + 1 });
+  handleChangeStock = event => {
+    const name = event.target.name;
+    const value = event.target.value;
+    var stateCopy = Object.assign({}, this.props);
+    //stateCopy.items[key].upVotes += 1;
+    this.setState(stateCopy);
+    // this.setState(name : value);
+    console.log(this.state);
   };
 
   generateCard = x => {
     return (
-      <div key={x.ItemID}>
-        <input
-          type="checkbox"
-          name="pasta"
-          id={x.ItemID}
-          className="checkbox-input"
-        />
-        <label htmlFor={x.ItemID} className="checkbox-label label">
-          <div className="checkbox-text">
-            <p className="checkbox-text--title">
-              {x.ItemName} | £{x.Price}
-            </p>
-            <div className="checkbox-text--descripxtion">
-              <div className="checkbox-textlayout">
-                <label className="shortlabel">In Stock </label>
-                <input
-                  className="formlist"
-                  onChange={this.handleChangeStock}
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={this.state.instock}
-                />
-              </div>
-              <div className="checkbox-textlayout">
-                <label className="shortlabel">Delivery </label>
-                <input
-                  className="formlist"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={this.state.delivery}
-                />
-              </div>
-              <div className="checkbox-textlayout">
-                <label className="shortlabel">End Stock </label>
-                <input
-                  className="formlist"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={this.state.endstock}
-                />
-              </div>
-            </div>
-          </div>
-        </label>
-      </div>
+      <li className="table-row" key={x.ItemID}>
+        <div className="col col-1" data-label="Item Code">
+          {x.ItemID}
+        </div>
+        <div className="col col-2" data-label="Item Name">
+          {x.ItemName}
+        </div>
+        <div className="col col-3" data-label="Instock">
+          0
+        </div>
+        <div className="col col-4" data-label="Quantity">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            name={x.ItemID + "Stock"}
+            onChange={this.handleChangeStock}
+          />
+        </div>
+        <div className="col col-5" data-label="Price">
+          £{x.Price}
+        </div>
+        <div className="col col-5" data-label="End Date">
+          {x.Price * 2}
+        </div>
+      </li>
     );
   };
 
   render() {
     return (
       <div className="main form-text">
-        {this.props.itemList
-          ? this.props.itemList.map(x => this.generateCard(x))
-          : null}
+        <div className="tableContainer">
+          <ul className="responsive-table">
+            <li className="table-header">
+              <div className="col col-1">Item Code</div>
+              <div className="col col-2">Item Name</div>
+              <div className="col col-3">Instock</div>
+              <div className="col col-4">Quantity</div>
+              <div className="col col-5">Price</div>
+              <div className="col col-6">End Date</div>
+            </li>
+            {this.props.itemList
+              ? this.props.itemList.map(x => this.generateCard(x))
+              : null}
+          </ul>
+        </div>
       </div>
     );
   }
